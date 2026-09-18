@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarMaker Top-3 SID Live</title>
+  <style>
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 35px 15px;
+      margin: 0;
+    }
+    h2 { color: #38bdf8; margin-bottom: 6px; }
+    .status {
+      font-size: 15px;
+      color: #94a3b8;
+      margin-bottom: 22px;
+    }
+    .status b { color: #facc15; }
+    button {
+      background: #22c55e;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 25px;
+      transition: 0.2s;
+    }
+    button.stop { background: #ef4444; color: #fff; }
+    table {
+      width: 100%;
+      max-width: 600px;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    th {
+      background: #0284c7;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+    .sid {
+      background: #0369a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #7dd3fc;
+      font-weight: bold;
+    }
+    .coin { color: #facc15; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h2>StarMaker Top-3 Tracker</h2>
+  <div class="status">
+    Round: <b id="r-num">--</b> | Timer: <b id="r-time">--</b>s
+  </div>
+
+  <button id="btn" onclick="toggle()">START TRACKING</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>SID</th>
+        <th>Name</th>
+        <th>Coins Won</th>
+      </tr>
+    </thead>
+    <tbody id="list">
+      <tr>
+        <td colspan="4" style="text-align:center; color:#64748b;">Click Start to begin tracking...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    // Backend API URL (isse hum next step me link karenge)
+    let API_BASE = "http://localhost:3000"; 
+
+    let active = false;
+    let timer = null;
+
+    async function updateData() {
+      try {
+        const res = await fetch(`${API_BASE}/api/live-status`);
+        const json = await res.json();
+
+        if (json.success) {
+          document.getElementById('r-num').innerText = json.round;
+          document.getElementById('r-time').innerText = json.timeLeft;
+
+          const tbody = document.getElementById('list');
+          if (json.top3 && json.top3.length > 0) {
+            tbody.innerHTML = json.top3.map(u => `
+              <tr>
+                <td>#${u.rank}</td>
+                <td><span class="sid">${u.sid}</span></td>
+                <td>${u.name}</td>
+                <td class="coin">${u.coins.toLocaleString()}</td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error("Tracking Error:", err);
+      }
+    }
+
+    function toggle() {
+      const btn = document.getElementById('btn');
+      active = !active;
+
+      if (active) {
+        btn.innerText = 'STOP TRACKING';
+        btn.classList.add('stop');
+        updateData();
+        timer = setInterval(updateData, 4000);
+      } else {
+        btn.innerText = 'START TRACKING';
+        btn.classList.remove('stop');
+        clearInterval(timer);
+      }
+    }
+  </script>
+</body>
+</html>
